@@ -10,12 +10,13 @@ test('deve consultar um pedido aprovado', async ({ page }) => {
   await expect(page.getByRole('heading')).toContainText('Consultar Pedido');
 
   //Act: Executar a ação
-  await page.getByTestId('search-order-id').fill('VLO-DZKG9A');
-  await page.getByTestId('search-order-button').click();
+  
+  //await page.getByLabel('Número do Pedido').fill('VLO-DZKG9A');
+  //await page.getByPlaceholder('Ex: VLO-ABC123').fill('VLO-DZKG9A');
+  await page.getByRole('textbox', { name: 'Número do Pedido' }).fill('VLO-DZKG9A');
+  await page.getByRole('button', { name: 'Buscar Pedido' }).click();
 
   //Assert: Verificar o resultado
-  await expect(page.getByTestId('order-result-id')).toBeVisible();
-  await expect(page.getByTestId('order-result-id')).toContainText('VLO-DZKG9A');
-  await expect(page.getByTestId('order-result-status')).toBeVisible();
-  await expect(page.getByTestId('order-result-status')).toContainText('APROVADO');
+  await expect(page.getByText('VLO-DZKG9A')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText('APROVADO')).toBeVisible();
 });
