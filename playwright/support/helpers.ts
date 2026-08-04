@@ -12,7 +12,3 @@ export function generateOrderModel() {
   // Retorna o prefixo fixo "VLO-" concatenado com o sufixo aleatório
   return `VLO-${suffix}`;
 }
-
-// Exemplo de uso:
-const order = generateOrderModel();
-console.log(order); // Saída ex: "VLO-DZKG9A", "VLO-4X8L2P", etc.

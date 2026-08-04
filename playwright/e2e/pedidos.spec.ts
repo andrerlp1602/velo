@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { generateOrderModel } from "../support/helpers";
-import { number } from "zod";
+
+import { OrderLockupPage, OrderStatus } from "../support/pages/OrderLockupPage";
 
 ///AAA - Arrange, Act, Assert
 
@@ -39,36 +40,9 @@ test.describe("Consulta de Pedido", () => {
 
     //Act
 
-    await page
-      .getByRole("textbox", { name: "Número do Pedido" })
-      .fill(order.number);
+    const orderLockupPage = new OrderLockupPage(page);
+    await orderLockupPage.buscarPedido(order.number);
 
-    //Alternativas:
-    //await page.getByPlaceholder("Ex: VLO-ABC123").fill("VLO-DZKG9A");
-    //await page.locator('//label[text()="Número do Pedido"]/..//input').fill("VLO-DZKG9A");
-    //await page.locator('input[name="order-id"]').fill("VLO-DZKG9A");
-    //await page.getByName("order-id").fill("VLO-DZKG9A");
-
-    //Act
-    //await page.locator('//button[text()="Buscar Pedido"]').click();
-    await page.getByRole("button", { name: "Buscar Pedido" }).click();
-
-    //Assert
-
-    // await expect(page.getByText("VLO-DZKG9A")).toBeVisible({
-    //   timeout: 10_000,
-    // });
-
-    // const containerPedido = page
-    //   .getByRole("paragraph")
-    //   .filter({ hasText: /^Pedido?/ })
-    //   .locator("..");
-
-    // await expect(containerPedido).toContainText(order);
-
-    // await expect(page.getByText("APROVADO")).toBeVisible({
-    //   timeout: 10_000,
-    // });
     await expect(page.getByTestId(`order-result-${order.number}`))
       .toMatchAriaSnapshot(`
       - img
@@ -100,15 +74,7 @@ test.describe("Consulta de Pedido", () => {
       - paragraph: /R\\$ \\d+\\.\\d+,\\d+/
       `);
 
-    const statusBadge = page
-      .getByRole("status")
-      .filter({ hasText: order.status });
-
-    await expect(statusBadge).toHaveClass(/bg-green-100/);
-    await expect(statusBadge).toHaveClass(/text-green-700/);
-
-    const statusIcon = statusBadge.locator("svg");
-    await expect(statusIcon).toHaveClass(/lucide-circle-check-big/);
+    await orderLockupPage.expectStatusBadge(order.status as OrderStatus);
   });
 
   test("deve consultar um pedido reprovado", async ({ page }) => {
@@ -129,19 +95,8 @@ test.describe("Consulta de Pedido", () => {
 
     //Act
 
-    await page
-      .getByRole("textbox", { name: "Número do Pedido" })
-      .fill(order.number);
-
-    //Alternativas:
-    //await page.getByPlaceholder("Ex: VLO-ABC123").fill("VLO-DZKG9A");
-    //await page.locator('//label[text()="Número do Pedido"]/..//input').fill("VLO-DZKG9A");
-    //await page.locator('input[name="order-id"]').fill("VLO-DZKG9A");
-    //await page.getByName("order-id").fill("VLO-DZKG9A");
-
-    //Act
-    //await page.locator('//button[text()="Buscar Pedido"]').click();
-    await page.getByRole("button", { name: "Buscar Pedido" }).click();
+    const orderLockupPage = new OrderLockupPage(page);
+    await orderLockupPage.buscarPedido(order.number);
 
     //Assert
 
@@ -190,15 +145,7 @@ test.describe("Consulta de Pedido", () => {
       - paragraph: /R\\$ \\d+\\.\\d+,\\d+/
       `);
 
-    const statusBadge = page
-      .getByRole("status")
-      .filter({ hasText: order.status });
-
-    await expect(statusBadge).toHaveClass(/bg-red-100/);
-    await expect(statusBadge).toHaveClass(/text-red-700/);
-
-    const statusIcon = statusBadge.locator("svg");
-    await expect(statusIcon).toHaveClass(/lucide-circle-x/);
+    await orderLockupPage.expectStatusBadge(order.status as OrderStatus);
   });
 
   test("deve consultar um pedido em analise", async ({ page }) => {
@@ -215,12 +162,8 @@ test.describe("Consulta de Pedido", () => {
     };
 
     //Act
-
-    await page
-      .getByRole("textbox", { name: "Número do Pedido" })
-      .fill(order.number);
-
-    await page.getByRole("button", { name: "Buscar Pedido" }).click();
+    const orderLockupPage = new OrderLockupPage(page);
+    await orderLockupPage.buscarPedido(order.number);
 
     //Assert
 
@@ -255,15 +198,7 @@ test.describe("Consulta de Pedido", () => {
       - paragraph: /R\\$ \\d+\\.\\d+,\\d+/
       `);
 
-    const statusBadge = page
-      .getByRole("status")
-      .filter({ hasText: order.status });
-
-    await expect(statusBadge).toHaveClass(/bg-amber-100/);
-    await expect(statusBadge).toHaveClass(/text-amber-700/);
-
-    const statusIcon = statusBadge.locator("svg");
-    await expect(statusIcon).toHaveClass(/lucide-clock/);
+    await orderLockupPage.expectStatusBadge(order.status as OrderStatus);
   });
 
   test("deve exibir mensagem quando o pedido não é encontrado", async ({
@@ -271,8 +206,8 @@ test.describe("Consulta de Pedido", () => {
   }) => {
     const order = generateOrderModel();
 
-    await page.getByRole("textbox", { name: "Número do Pedido" }).fill(order);
-    await page.getByRole("button", { name: "Buscar Pedido" }).click();
+    const orderLockupPage = new OrderLockupPage(page);
+    await orderLockupPage.buscarPedido(order);
 
     // await expect(page.locator("#root")).toContainText("Pedido não encontrado");
     // await expect(page.locator("#root")).toContainText(
