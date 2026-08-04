@@ -1,14 +1,13 @@
-export function generateOrderModel() {
-  const alphaNumeric = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+export function generateOrderCode() {
+  const prefix = "VLO";
 
-  // Gera apenas os 6 caracteres alfanuméricos finais
-  let suffix = "";
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let randomPart = "";
+
   for (let i = 0; i < 6; i++) {
-    suffix += alphaNumeric.charAt(
-      Math.floor(Math.random() * alphaNumeric.length),
-    );
+    const randomIndex = Math.floor(Math.random() * chars.length);
+    randomPart += chars[randomIndex];
   }
 
-  // Retorna o prefixo fixo "VLO-" concatenado com o sufixo aleatório
-  return `VLO-${suffix}`;
+  return `${prefix}-${randomPart}`;
 }
