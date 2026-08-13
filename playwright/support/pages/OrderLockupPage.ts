@@ -1,68 +1,120 @@
-import { Page, Locator, expect } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
-export type OrderStatus = "APROVADO" | "REPROVADO" | "EM_ANALISE";
+type OrderStatus = "APROVADO" | "REPROVADO" | "EM_ANALISE";
 
-interface StatusBadgeStyle {
-  bgClass: RegExp;
-  textClass: RegExp;
-  iconClass: RegExp;
-}
-
-// Mapa único de verdade para o estilo esperado de cada status.
-// Qualquer novo status entra aqui, sem precisar tocar nos testes.
-const STATUS_BADGE_STYLES: Record<OrderStatus, StatusBadgeStyle> = {
-  APROVADO: {
-    bgClass: /bg-green-100/,
-    textClass: /text-green-700/,
-    iconClass: /lucide-circle-check-big/,
-  },
-  REPROVADO: {
-    bgClass: /bg-red-100/,
-    textClass: /text-red-700/,
-    iconClass: /lucide-circle-x/,
-  },
-  EM_ANALISE: {
-    bgClass: /bg-amber-100/,
-    textClass: /text-amber-700/,
-    iconClass: /lucide-clock/,
-  },
+export type OrderDetails = {
+  number: string;
+  status: OrderStatus;
+  color: string;
+  wheels: string;
+  customer: {
+    name: string;
+    email: string;
+  };
+  payment: string;
+  interior?: string;
 };
 
 export class OrderLockupPage {
   constructor(private page: Page) {}
 
-  async buscarPedido(numero: string) {
+  async open() {
+    await this.page.goto("http://localhost:5173/lookup");
+    await this.assertLoaded();
+  }
+
+  async assertLoaded() {
+    await expect(this.page.getByRole("heading")).toContainText(
+      "Consultar Pedido",
+    );
+  }
+
+  async searchOrder(code: string) {
     await this.page
       .getByRole("textbox", { name: "Número do Pedido" })
-      .fill(numero);
+      .fill(code);
     await this.page.getByRole("button", { name: "Buscar Pedido" }).click();
   }
 
-  /**
-   * Locator do badge de status, filtrado pelo texto do status informado.
-   */
-  statusBadge(status: string): Locator {
-    return this.page.getByRole("status").filter({ hasText: status });
+  async validateOrderDetails(order: OrderDetails) {
+    const interior = order.interior ?? "cream";
+    await expect(
+      this.page.getByTestId(`order-result-${order.number}`),
+    ).toMatchAriaSnapshot(
+      this.buildOrderDetailsSnapshot({ ...order, interior }),
+    );
   }
 
-  /**
-   * Valida cor de fundo, cor do texto e ícone do badge de status,
-   * de acordo com o mapeamento de estilo esperado para cada status.
-   */
-  async expectStatusBadge(status: OrderStatus): Promise<void> {
-    const style = STATUS_BADGE_STYLES[status];
-    if (!style) {
-      throw new Error(
-        `Nenhum estilo de badge mapeado para o status "${status}". ` +
-          `Atualize STATUS_BADGE_STYLES em OrderLockupPage.ts.`,
-      );
-    }
+  async validateOrderNotFound() {
+    await expect(this.page.locator("#root")).toMatchAriaSnapshot(`
+      - img
+      - heading "Pedido não encontrado" [level=3]
+      - paragraph: Verifique o número do pedido e tente novamente
+      `);
+  }
 
-    const badge = this.statusBadge(status);
-    await expect(badge).toHaveClass(style.bgClass);
-    await expect(badge).toHaveClass(style.textClass);
+  async validateStatusBadge(status: OrderStatus) {
+    const statusClasses = {
+      APROVADO: {
+        background: "bg-green-100",
+        text: "text-green-700",
+        icon: "lucide-circle-check-big",
+      },
+      REPROVADO: {
+        background: "bg-red-100",
+        text: "text-red-700",
+        icon: "lucide-circle-x",
+      },
+      EM_ANALISE: {
+        background: "bg-amber-100",
+        text: "text-amber-700",
+        icon: "lucide-clock",
+      },
+    } as const;
 
-    const icon = badge.locator("svg");
-    await expect(icon).toHaveClass(style.iconClass);
+    const classes = statusClasses[status];
+    const statusBadge = this.page
+      .getByRole("status")
+      .filter({ hasText: status });
+
+    await expect(statusBadge).toHaveClass(new RegExp(classes.background));
+    await expect(statusBadge).toHaveClass(new RegExp(classes.text));
+    await expect(statusBadge.locator("svg")).toHaveClass(
+      new RegExp(classes.icon),
+    );
+  }
+
+  private buildOrderDetailsSnapshot(
+    order: OrderDetails & { interior: string },
+  ): string {
+    return `
+      - img
+      - paragraph: Pedido
+      - paragraph: ${order.number}
+      - status:
+        - img
+        - text: ${order.status}
+      - img "Velô Sprint"
+      - paragraph: Modelo
+      - paragraph: Velô Sprint
+      - paragraph: Cor
+      - paragraph: ${order.color}
+      - paragraph: Interior
+      - paragraph: ${order.interior}
+      - paragraph: Rodas
+      - paragraph: ${order.wheels}
+      - heading "Dados do Cliente" [level=4]
+      - paragraph: Nome
+      - paragraph: ${order.customer.name}
+      - paragraph: Email
+      - paragraph: ${order.customer.email}
+      - paragraph: Loja de Retirada
+      - paragraph
+      - paragraph: Data do Pedido
+      - paragraph: /\\d+\\/\\d+\\/\\d+/
+      - heading "Pagamento" [level=4]
+      - paragraph: ${order.payment}
+      - paragraph: /R\\$ \\d+\\.\\d+,\\d+/
+      `;
   }
 }
