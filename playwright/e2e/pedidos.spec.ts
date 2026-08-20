@@ -1,33 +1,22 @@
-import { test } from "@playwright/test";
-
-import { AppHeader } from "../support/components/AppHeader";
+import { test, expect } from "../support/fixtures";
 import { generateOrderModel } from "../support/helpers";
-import { LandingPage } from "../support/pages/LandingPage";
-import { OrderLockupPage } from "../support/pages/OrderLockupPage";
 
 /// AAA - Arrange, Act, Assert
 
 test.describe("Consulta de Pedido", () => {
-  test("deve acessar consulta de pedido pela navbar", async ({ page }) => {
-    const landingPage = new LandingPage(page);
-    const appHeader = new AppHeader(page);
-    const orderLockupPage = new OrderLockupPage(page);
-
-    await landingPage.open();
-    await landingPage.assertHeroVisible();
-    await appHeader.goToOrderLookup();
-    await orderLockupPage.assertLoaded();
+  test("deve acessar consulta de pedido pela navbar", async ({ app }) => {
+    await app.landing.open();
+    await app.landing.assertHeroVisible();
+    await app.appHeader.goToOrderLookup();
+    await app.orderLockup.assertLoaded();
   });
 
   test.describe("busca de pedido", () => {
-    let orderLockupPage: OrderLockupPage;
-
-    test.beforeEach(async ({ page }) => {
-      orderLockupPage = new OrderLockupPage(page);
-      await orderLockupPage.open();
+    test.beforeEach(async ({ app }) => {
+      await app.orderLockup.open();
     });
 
-    test("deve consultar um pedido aprovado", async () => {
+    test("deve consultar um pedido aprovado", async ({ app }) => {
       // Test Data
       const order = {
         number: "VLO-DZKG9A",
@@ -42,14 +31,14 @@ test.describe("Consulta de Pedido", () => {
       };
 
       // Act
-      await orderLockupPage.searchOrder(order.number);
+      await app.orderLockup.searchOrder(order.number);
 
       // Assert
-      await orderLockupPage.validateOrderDetails(order);
-      await orderLockupPage.validateStatusBadge(order.status);
+      await app.orderLockup.validateOrderDetails(order);
+      await app.orderLockup.validateStatusBadge(order.status);
     });
 
-    test("deve consultar um pedido reprovado", async () => {
+    test("deve consultar um pedido reprovado", async ({ app }) => {
       // Test Data
       const order = {
         number: "VLO-2DCYXE",
@@ -64,14 +53,14 @@ test.describe("Consulta de Pedido", () => {
       };
 
       // Act
-      await orderLockupPage.searchOrder(order.number);
+      await app.orderLockup.searchOrder(order.number);
 
       // Assert
-      await orderLockupPage.validateOrderDetails(order);
-      await orderLockupPage.validateStatusBadge(order.status);
+      await app.orderLockup.validateOrderDetails(order);
+      await app.orderLockup.validateStatusBadge(order.status);
     });
 
-    test("deve consultar um pedido em analise", async () => {
+    test("deve consultar um pedido em analise", async ({ app }) => {
       // Test Data
       const order = {
         number: "VLO-E6B8GB",
@@ -86,23 +75,27 @@ test.describe("Consulta de Pedido", () => {
       };
 
       // Act
-      await orderLockupPage.searchOrder(order.number);
+      await app.orderLockup.searchOrder(order.number);
 
       // Assert
-      await orderLockupPage.validateOrderDetails(order);
-      await orderLockupPage.validateStatusBadge(order.status);
+      await app.orderLockup.validateOrderDetails(order);
+      await app.orderLockup.validateStatusBadge(order.status);
     });
 
-    test("deve exibir mensagem quando o pedido não é encontrado", async () => {
+    test("deve exibir mensagem quando o pedido não é encontrado", async ({
+      app,
+    }) => {
       const order = generateOrderModel();
 
-      await orderLockupPage.searchOrder(order);
-      await orderLockupPage.validateOrderNotFound();
+      await app.orderLockup.searchOrder(order);
+      await app.orderLockup.validateOrderNotFound();
     });
 
-    test("deve exibir mensagem quando o código do pedido está fora do padrão", async () => {
-      await orderLockupPage.searchOrder("ABC-12345");
-      await orderLockupPage.validateOrderNotFound();
+    test("deve exibir mensagem quando o código do pedido está fora do padrão", async ({
+      app,
+    }) => {
+      await app.orderLockup.searchOrder("ABC-12345");
+      await app.orderLockup.validateOrderNotFound();
     });
   });
 });
