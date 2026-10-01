@@ -18,7 +18,7 @@ export async function insertOrder(order: OrderDetails) {
     id: crypto.randomUUID(),
     order_number: order.number,
     color: order.color.replace(" ", "-").toLowerCase(),
-    wheel_type: order.wheels.replace("Wheels", "").toLowerCase(),
+    wheel_type: order.wheels.replace(" Wheels", "").toLowerCase(),
     customer_name: order.customer.name,
     customer_email: order.customer.email,
     customer_phone: order.customer.phone,

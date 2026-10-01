@@ -5,7 +5,7 @@ import {
   insertOrder,
   deleteOrderByNumber,
 } from "../support/database/orderRepository";
-import crypto from "crypto";
+import data from "../support/fixtures/pedidos.json" with { type: "json" };
 
 test.describe("Consulta de Pedido", () => {
   test.beforeEach(async ({ app }) => {
@@ -15,20 +15,7 @@ test.describe("Consulta de Pedido", () => {
   // VLO-9X0H93
 
   test("deve consultar um pedido aprovado", async ({ app }) => {
-    const order: OrderDetails = {
-      number: "VLO-SE4R01",
-      status: "APROVADO",
-      color: "Glacier Blue",
-      wheels: "aero Wheels",
-      customer: {
-        name: "Andre Paglione",
-        email: "paglione@velo.dev",
-        phone: "(11) 99999-9999",
-        document: "780.228.290-05",
-      },
-      payment: "À Vista",
-      total_price: "40000",
-    };
+    const order: OrderDetails = data.aprovado as OrderDetails;
 
     await deleteOrderByNumber(order.number);
 
@@ -40,20 +27,7 @@ test.describe("Consulta de Pedido", () => {
   });
 
   test("deve consultar um pedido reprovado", async ({ app }) => {
-    const order: OrderDetails = {
-      number: "VLO-SE4R02",
-      status: "REPROVADO",
-      color: "Midnight Black",
-      wheels: "sport Wheels",
-      customer: {
-        name: "Steve Jobs",
-        email: "jobs@apple.com",
-        phone: "(11) 99999-9999",
-        document: "780.228.290-05",
-      },
-      payment: "À Vista",
-      total_price: "40000",
-    };
+    const order: OrderDetails = data.reprovado as OrderDetails;
 
     await deleteOrderByNumber(order.number);
 
@@ -65,20 +39,7 @@ test.describe("Consulta de Pedido", () => {
   });
 
   test("deve consultar um pedido em analise", async ({ app }) => {
-    const order: OrderDetails = {
-      number: "VLO-SE4R03",
-      status: "EM_ANALISE",
-      color: "Lunar White",
-      wheels: "aero Wheels",
-      customer: {
-        name: "João da Silva",
-        email: "joao@velo.dev",
-        phone: "(11) 99999-9999",
-        document: "780.228.290-05",
-      },
-      payment: "À Vista",
-      total_price: "40000",
-    };
+    const order: OrderDetails = data.em_analise as OrderDetails;
 
     await deleteOrderByNumber(order.number);
 
