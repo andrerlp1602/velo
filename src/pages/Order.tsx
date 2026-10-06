@@ -270,8 +270,10 @@ const Order = () => {
                       value={formData.name}
                       onChange={(e) => handleChange('name', e.target.value)}
                       className={cn(errors.name && 'border-destructive')}
+                      aria-invalid={!!errors.name}
+                      aria-describedby={errors.name ? 'name-error' : undefined}
                     />
-                    {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                    {errors.name && <p id="name-error" className="text-sm text-destructive">{errors.name}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="surname">Sobrenome</Label>
@@ -281,8 +283,10 @@ const Order = () => {
                       value={formData.surname}
                       onChange={(e) => handleChange('surname', e.target.value)}
                       className={cn(errors.surname && 'border-destructive')}
+                      aria-invalid={!!errors.surname}
+                      aria-describedby={errors.surname ? 'surname-error' : undefined}
                     />
-                    {errors.surname && <p className="text-sm text-destructive">{errors.surname}</p>}
+                    {errors.surname && <p id="surname-error" className="text-sm text-destructive">{errors.surname}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -293,8 +297,10 @@ const Order = () => {
                       value={formData.email}
                       onChange={(e) => handleChange('email', e.target.value)}
                       className={cn(errors.email && 'border-destructive')}
+                      aria-invalid={!!errors.email}
+                      aria-describedby={errors.email ? 'email-error' : undefined}
                     />
-                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                    {errors.email && <p id="email-error" className="text-sm text-destructive">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
@@ -309,10 +315,12 @@ const Order = () => {
                           id="phone"
                           data-testid="checkout-phone"
                           className={cn(errors.phone && 'border-destructive')}
+                          aria-invalid={!!errors.phone}
+                          aria-describedby={errors.phone ? 'phone-error' : undefined}
                         />
                       )}
                     </InputMask>
-                    {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+                    {errors.phone && <p id="phone-error" className="text-sm text-destructive">{errors.phone}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cpf">CPF</Label>
@@ -327,10 +335,12 @@ const Order = () => {
                           id="cpf"
                           data-testid="checkout-cpf"
                           className={cn(errors.cpf && 'border-destructive')}
+                          aria-invalid={!!errors.cpf}
+                          aria-describedby={errors.cpf ? 'cpf-error' : undefined}
                         />
                       )}
                     </InputMask>
-                    {errors.cpf && <p className="text-sm text-destructive">{errors.cpf}</p>}
+                    {errors.cpf && <p id="cpf-error" className="text-sm text-destructive">{errors.cpf}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="store">Loja para Retirada</Label>
@@ -342,6 +352,8 @@ const Order = () => {
                         id="store"
                         data-testid="checkout-store"
                         className={cn(errors.store && 'border-destructive')}
+                        aria-invalid={!!errors.store}
+                        aria-describedby={errors.store ? 'store-error' : undefined}
                       >
                         <SelectValue placeholder="Selecione uma loja" />
                       </SelectTrigger>
@@ -353,7 +365,7 @@ const Order = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.store && <p className="text-sm text-destructive">{errors.store}</p>}
+                    {errors.store && <p id="store-error" className="text-sm text-destructive">{errors.store}</p>}
                   </div>
                 </div>
               </section>
@@ -449,6 +461,8 @@ const Order = () => {
                     checked={formData.terms}
                     onCheckedChange={(checked) => handleChange('terms', checked as boolean)}
                     className={cn(errors.terms && 'border-destructive')}
+                    aria-invalid={!!errors.terms}
+                    aria-describedby={errors.terms ? 'terms-error' : undefined}
                   />
                   <div>
                     <Label htmlFor="terms" className="cursor-pointer">
@@ -461,7 +475,7 @@ const Order = () => {
                         Política de Privacidade
                       </Link>
                     </Label>
-                    {errors.terms && <p className="text-sm text-destructive mt-1">{errors.terms}</p>}
+                    {errors.terms && <p id="terms-error" className="text-sm text-destructive mt-1">{errors.terms}</p>}
                   </div>
                 </div>
               </section>

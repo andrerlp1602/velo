@@ -1,15 +1,18 @@
-import 'dotenv/config'
 import pg from 'pg'
 import { Kysely, PostgresDialect } from 'kysely'
-import { Database } from './schema'
+import type { Database } from './schema'
 
-const dialect = new PostgresDialect({
-  pool: new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: 10,
+export function createDatabase(): Kysely<Database> {
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) {
+    throw new Error(
+      'DATABASE_URL não definida. Copie .env.example para .env e preencha os valores.',
+    )
+  }
+
+  return new Kysely<Database>({
+    dialect: new PostgresDialect({
+      pool: new pg.Pool({ connectionString, max: 10 }),
+    }),
   })
-})
-
-export const db = new Kysely<Database>({
-  dialect,
-})
+}

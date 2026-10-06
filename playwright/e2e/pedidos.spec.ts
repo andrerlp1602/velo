@@ -1,79 +1,41 @@
-import { test, expect } from "../support/fixtures";
-import { generateOrderCode } from "../support/helpers";
-import type { OrderDetails } from "../support/actions/orderLookupActions";
-import {
-  insertOrder,
-  deleteOrderByNumber,
-} from "../support/database/orderRepository";
-import data from "../support/fixtures/pedidos.json" with { type: "json" };
+import { test } from '../support/fixtures'
+import { generateOrderCode } from '../support/helpers'
+import type { OrderOverrides } from '../support/types/order'
+import data from '../support/data/pedidos.json' with { type: 'json' }
 
-test.describe("Consulta de Pedido", () => {
+const scenarios = data as Record<string, OrderOverrides>
+
+test.describe('Consulta de Pedido', () => {
   test.beforeEach(async ({ app }) => {
-    await app.orderLookup.open();
-  });
+    await app.orderLookup.open()
+  })
 
-  // VLO-9X0H93
+  for (const [scenario, overrides] of Object.entries(scenarios)) {
+    test(`deve consultar um pedido ${scenario.replace('_', ' ')}`, async ({ app, orders }) => {
+      const order = await orders.create(overrides)
 
-  test("deve consultar um pedido aprovado", async ({ app }) => {
-    const order: OrderDetails = data.aprovado as OrderDetails;
+      await app.orderLookup.searchOrder(order.number)
+      await app.orderLookup.expectOrderDetails(order)
+      await app.orderLookup.expectStatusBadge(order.status)
+    })
+  }
 
-    await deleteOrderByNumber(order.number);
+  test('deve exibir mensagem quando o pedido não é encontrado', async ({ app }) => {
+    await app.orderLookup.searchOrder(generateOrderCode())
+    await app.orderLookup.expectOrderNotFound()
+  })
 
-    await insertOrder(order);
+  test('deve exibir mensagem quando o código do pedido está fora do padrão', async ({ app }) => {
+    await app.orderLookup.searchOrder('XYZ-999-INVALIDO')
+    await app.orderLookup.expectOrderNotFound()
+  })
 
-    await app.orderLookup.searchOrder(order.number);
-    await app.orderLookup.validateOrderDetails(order);
-    await app.orderLookup.validateStatusBadge(order.status);
-  });
-
-  test("deve consultar um pedido reprovado", async ({ app }) => {
-    const order: OrderDetails = data.reprovado as OrderDetails;
-
-    await deleteOrderByNumber(order.number);
-
-    await insertOrder(order);
-
-    await app.orderLookup.searchOrder(order.number);
-    await app.orderLookup.validateOrderDetails(order);
-    await app.orderLookup.validateStatusBadge(order.status);
-  });
-
-  test("deve consultar um pedido em analise", async ({ app }) => {
-    const order: OrderDetails = data.em_analise as OrderDetails;
-
-    await deleteOrderByNumber(order.number);
-
-    await insertOrder(order);
-
-    await app.orderLookup.searchOrder(order.number);
-    await app.orderLookup.validateOrderDetails(order);
-    await app.orderLookup.validateStatusBadge(order.status);
-  });
-
-  test("deve exibir mensagem quando o pedido não é encontrado", async ({
+  test('deve manter o botão de busca desabilitado com campo vazio ou apenas espaços', async ({
     app,
   }) => {
-    const order = generateOrderCode();
-    await app.orderLookup.searchOrder(order);
-    await app.orderLookup.validateOrderNotFound();
-  });
+    await app.orderLookup.expectSearchDisabled()
 
-  test("deve exibir mensagem quando o código do pedido está fora do padrão", async ({
-    app,
-  }) => {
-    const orderCode = "XYZ-999-INVALIDO";
-    await app.orderLookup.searchOrder(orderCode);
-    await app.orderLookup.validateOrderNotFound();
-  });
-
-  test("deve manter o botão de busca desabilitado com campo vazio ou apenas espaços", async ({
-    app,
-    page,
-  }) => {
-    const button = app.orderLookup.elements.searchButton;
-    await expect(button).toBeDisabled();
-
-    await app.orderLookup.elements.orderInput.fill("     ");
-    await expect(button).toBeDisabled();
-  });
-});
+    await app.orderLookup.fillOrderCode('     ')
+    await app.orderLookup.expectSearchDisabled()
+  })
+})

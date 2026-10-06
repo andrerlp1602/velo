@@ -1,0 +1,35 @@
+{
+  "aprovado": {
+    "status": "APROVADO",
+    "color": "glacier-blue",
+    "wheels": "aero",
+    "payment": "avista",
+    "totalPrice": 40000,
+    "customer": {
+      "name": "Andre Paglione",
+      "email": "paglione@velo.dev"
+    }
+  },
+  "reprovado": {
+    "status": "REPROVADO",
+    "color": "midnight-black",
+    "wheels": "sport",
+    "payment": "avista",
+    "totalPrice": 42000,
+    "customer": {
+      "name": "Steve Jobs",
+      "email": "jobs@apple.com"
+    }
+  },
+  "em_analise": {
+    "status": "EM_ANALISE",
+    "color": "lunar-white",
+    "wheels": "aero",
+    "payment": "avista",
+    "totalPrice": 40000,
+    "customer": {
+      "name": "João da Silva",
+      "email": "joao@velo.dev"
+    }
+  }
+}

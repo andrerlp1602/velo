@@ -1,44 +1,51 @@
 import { Page, expect } from '@playwright/test'
 
 export function createConfiguratorActions(page: Page) {
-  const optionalCheckbox = (name: string | RegExp) => page.getByRole('checkbox', { name })
+  const elements = {
+    totalPrice: page.getByTestId('total-price'),
+    carImage: page.locator('img[alt^="Velô Sprint"]'),
+    finishButton: page.getByRole('button', { name: 'Monte o Seu' }),
+    optionButton: (name: string | RegExp) => page.getByRole('button', { name }),
+    optionalCheckbox: (name: string | RegExp) => page.getByRole('checkbox', { name }),
+  }
 
   return {
-    async open() {
+    elements,
+
+    async open(): Promise<void> {
       await page.goto('/configure')
     },
 
-    async selectColor(name: string) {
-      await page.getByRole('button', { name }).click()
+    async selectColor(name: string): Promise<void> {
+      await elements.optionButton(name).click()
     },
 
-    async selectWheels(name: string | RegExp) {
-      await page.getByRole('button', { name }).click()
+    async selectWheels(name: string | RegExp): Promise<void> {
+      await elements.optionButton(name).click()
     },
 
-    async expectPrice(price: string) {
-      const priceElement = page.getByTestId('total-price')
-      await expect(priceElement).toBeVisible()
-      await expect(priceElement).toHaveText(price)
+    async checkOptional(name: string | RegExp): Promise<void> {
+      await elements.optionalCheckbox(name).check()
     },
 
-    async expectCarImageSrc(src: string) {
-      const carImage = page.locator('img[alt^="Velô Sprint"]')
-      await expect(carImage).toHaveAttribute('src', src)
+    async uncheckOptional(name: string | RegExp): Promise<void> {
+      await elements.optionalCheckbox(name).uncheck()
     },
 
-    async checkOptional(name: string | RegExp) {
-      await expect(optionalCheckbox(name)).toBeVisible()
-      await optionalCheckbox(name).check()
+    async finishConfigurator(): Promise<void> {
+      await elements.finishButton.click()
     },
 
-    async uncheckOptional(name: string | RegExp) {
-      await expect(optionalCheckbox(name)).toBeVisible()
-      await optionalCheckbox(name).uncheck()
+    async expectPrice(price: string): Promise<void> {
+      await expect(elements.totalPrice).toHaveText(price)
     },
 
-    async finishConfigurator() {
-      await page.getByRole('button', { name: 'Monte o Seu' }).click()
+    /** `imageName` sem extensão; aceita o sufixo de hash que o Vite adiciona no build. */
+    async expectCarImage(imageName: string): Promise<void> {
+      await expect(elements.carImage).toHaveAttribute(
+        'src',
+        new RegExp(`/${imageName}(-[\\w-]{8})?\\.png$`),
+      )
     },
   }
 }

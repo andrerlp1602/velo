@@ -1,3 +1,5 @@
+import type { ColumnType } from 'kysely'
+
 export interface OrderTable {
   id: string
   order_number: string
@@ -8,11 +10,11 @@ export interface OrderTable {
   customer_phone: string
   customer_cpf: string
   payment_method: string
-  total_price: string
+  total_price: ColumnType<string, number, number>
   status: string
-  created_at: Date | string
-  updated_at: Date | string
-  optionals: string[]
+  created_at: ColumnType<Date, string, string>
+  updated_at: ColumnType<Date, string, string>
+  optionals: string[] | null
 }
 
 export interface Database {

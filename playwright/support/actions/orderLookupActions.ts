@@ -1,43 +1,56 @@
-import { Page, expect } from "@playwright/test";
+import { Page, expect } from '@playwright/test'
+import type { ExteriorColor, Order, OrderStatus, PaymentMethod } from '../types/order'
 
-export type OrderStatus = "APROVADO" | "REPROVADO" | "EM_ANALISE";
+const colorLabels: Record<ExteriorColor, string> = {
+  'glacier-blue': 'Glacier Blue',
+  'lunar-white': 'Lunar White',
+  'midnight-black': 'Midnight Black',
+}
 
-export type OrderDetails = {
-  number: string;
-  status: OrderStatus;
-  color: string;
-  wheels: string;
-  customer: { name: string; email: string; phone: string; document: string };
-  payment: string;
-  total_price: string;
-};
+const paymentLabels: Record<PaymentMethod, string> = {
+  avista: 'À Vista',
+  financiamento: 'Financiamento 12x',
+}
+
+const statusTones: Record<OrderStatus, string> = {
+  APROVADO: 'success',
+  REPROVADO: 'danger',
+  EM_ANALISE: 'warning',
+}
 
 export function createOrderLookupActions(page: Page) {
-  const orderInput = page.getByRole("textbox", { name: "Número do Pedido" });
-  const searchButton = page.getByRole("button", { name: "Buscar Pedido" });
+  const elements = {
+    heroTitle: page.getByTestId('hero-section').getByRole('heading'),
+    lookupLink: page.getByRole('link', { name: 'Consultar Pedido' }),
+    pageHeading: page.getByRole('heading', { name: 'Consultar Pedido' }),
+    orderInput: page.getByRole('textbox', { name: 'Número do Pedido' }),
+    searchButton: page.getByRole('button', { name: 'Buscar Pedido' }),
+    statusBadge: page.getByRole('status'),
+    orderResult: (orderNumber: string) => page.getByTestId(`order-result-${orderNumber}`),
+  }
 
   return {
-    elements: {
-      orderInput,
-      searchButton,
+    elements,
+
+    async open(): Promise<void> {
+      await page.goto('/')
+      await expect(elements.heroTitle).toContainText('Velô Sprint')
+
+      await elements.lookupLink.click()
+      await expect(elements.pageHeading).toBeVisible()
     },
 
-    async open() {
-      await page.goto("/");
-      const title = page.getByTestId("hero-section").getByRole("heading");
-      await expect(title).toContainText("Velô Sprint");
-
-      await page.getByRole("link", { name: "Consultar Pedido" }).click();
-      await expect(page.getByRole("heading")).toContainText("Consultar Pedido");
+    async fillOrderCode(code: string): Promise<void> {
+      await elements.orderInput.fill(code)
     },
 
-    async searchOrder(code: string) {
-      await orderInput.fill(code);
-      await searchButton.click();
+    async searchOrder(code: string): Promise<void> {
+      await elements.orderInput.fill(code)
+      await elements.searchButton.click()
     },
 
-    async validateOrderDetails(order: OrderDetails) {
-      const snapshot = `
+    async expectOrderDetails(order: Order): Promise<void> {
+      await expect(elements.orderResult(order.number)).toMatchAriaSnapshot(`
       - img
       - paragraph: Pedido
       - paragraph: ${order.number}
@@ -48,11 +61,11 @@ export function createOrderLookupActions(page: Page) {
       - paragraph: Modelo
       - paragraph: Velô Sprint
       - paragraph: Cor
-      - paragraph: ${order.color}
+      - paragraph: ${colorLabels[order.color]}
       - paragraph: Interior
       - paragraph: cream
       - paragraph: Rodas
-      - paragraph: ${order.wheels}
+      - paragraph: ${order.wheels} Wheels
       - heading "Dados do Cliente" [level=4]
       - paragraph: Nome
       - paragraph: ${order.customer.name}
@@ -63,49 +76,26 @@ export function createOrderLookupActions(page: Page) {
       - paragraph: Data do Pedido
       - paragraph: /\\d+\\/\\d+\\/\\d+/
       - heading "Pagamento" [level=4]
-      - paragraph: ${order.payment}
+      - paragraph: ${paymentLabels[order.payment]}
       - paragraph: /R\\$ \\d+\\.\\d+,\\d+/
-      `;
-      await expect(
-        page.getByTestId(`order-result-${order.number}`),
-      ).toMatchAriaSnapshot(snapshot);
+      `)
     },
 
-    async validateStatusBadge(status: OrderStatus) {
-      const statusClasses = {
-        APROVADO: {
-          background: "bg-green-100",
-          text: "text-green-700",
-          icon: "lucide-circle-check-big",
-        },
-        REPROVADO: {
-          background: "bg-red-100",
-          text: "text-red-700",
-          icon: "lucide-circle-x",
-        },
-        EM_ANALISE: {
-          background: "bg-amber-100",
-          text: "text-amber-700",
-          icon: "lucide-clock",
-        },
-      } as const;
-
-      const classes = statusClasses[status];
-      const statusBadge = page.getByRole("status").filter({ hasText: status });
-
-      await expect(statusBadge).toHaveClass(new RegExp(classes.background));
-      await expect(statusBadge).toHaveClass(new RegExp(classes.text));
-      await expect(statusBadge.locator("svg")).toHaveClass(
-        new RegExp(classes.icon),
-      );
+    async expectStatusBadge(status: OrderStatus): Promise<void> {
+      await expect(elements.statusBadge).toHaveText(status)
+      await expect(elements.statusBadge).toHaveAttribute('data-tone', statusTones[status])
     },
 
-    async validateOrderNotFound() {
-      await expect(page.locator("#root")).toMatchAriaSnapshot(`
+    async expectOrderNotFound(): Promise<void> {
+      await expect(page.locator('#root')).toMatchAriaSnapshot(`
       - img
       - heading "Pedido não encontrado" [level=3]
       - paragraph: Verifique o número do pedido e tente novamente
-      `);
+      `)
     },
-  };
+
+    async expectSearchDisabled(): Promise<void> {
+      await expect(elements.searchButton).toBeDisabled()
+    },
+  }
 }
