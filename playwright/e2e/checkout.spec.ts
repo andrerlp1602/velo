@@ -36,7 +36,7 @@ test.describe('Checkout', () => {
       const customer = {
         name: 'A',
         lastname: 'B',
-        email: 'papito@teste.com',
+        email: 'andre@paglione.com',
         document: '00000014141',
         phone: '(11) 99999-9999'
       }
@@ -56,9 +56,9 @@ test.describe('Checkout', () => {
 
     test('deve exibir erro para e-mail com formato inválido', async ({ app }) => {
       const customer = {
-        name: 'Fernando',
-        lastname: 'Papito',
-        email: 'papito@.com',
+        name: 'Andre',
+        lastname: 'Paglione',
+        email: 'andre@.paglione.com',
         document: '00000014141',
         phone: '(11) 99999-9999'
       }
@@ -78,9 +78,9 @@ test.describe('Checkout', () => {
     test('deve exibir erro para CPF inválido', async ({ app }) => {
 
       const customer = {
-        name: 'Fernando',
-        lastname: 'Papito',
-        email: 'papito@test.com',
+        name: 'Andre',
+        lastname: 'Paglione',
+        email: 'andre@paglione.com',
         document: '00000014199',
         phone: '(11) 99999-9999'
       }
@@ -100,9 +100,9 @@ test.describe('Checkout', () => {
     test('deve exigir o aceite dos termos ao finalizar com dados válidos', async ({ app }) => {
 
       const customer = {
-        name: 'Fernando',
-        lastname: 'Papito',
-        email: 'papito@test.com',
+        name: 'Andre',
+        lastname: 'Paglione',
+        email: 'andre@paglione.com',
         document: '00000014199',
         phone: '(11) 99999-9999'
       }

@@ -5,8 +5,8 @@
     "color": "Glacier Blue",
     "wheels": "aero Wheels",
     "customer": {
-      "name": "Fernando Papito",
-      "email": "papito@velo.dev",
+      "name": "Andre Paglione",
+      "email": "andre@paglione.com",
       "document": "780.228.290-05",
       "phone": "(11) 99999-9999"
     },
@@ -20,7 +20,7 @@
     "wheels": "sport Wheels",
     "customer": {
       "name": "Steve Jobs",
-      "email": "jobs@apple.com",
+      "email": "andre@paglione.com",
       "document": "780.228.290-05",
       "phone": "(11) 99999-9999"
     },
@@ -34,7 +34,7 @@
     "wheels": "aero Wheels",
     "customer": {
       "name": "João da Silva",
-      "email": "joao@velo.dev",
+      "email": "andre@paglione.com",
       "document": "780.228.290-05",
       "phone": "(11) 99999-9999"
     },
