@@ -60,10 +60,10 @@ const stores = [
 
 const onlyDigits = (value: string): string => value.replace(/\D/g, '');
 
-const isValidCpf = (value: string): boolean => {
-  const cpf = onlyDigits(value);
-  if (cpf.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(cpf)) return false;
+const isValidDocument = (value: string): boolean => {
+  const document = onlyDigits(value);
+  if (document.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(document)) return false;
 
   const calcDigit = (base: string, factor: number): number => {
     let total = 0;
@@ -74,9 +74,9 @@ const isValidCpf = (value: string): boolean => {
     return mod < 2 ? 0 : 11 - mod;
   };
 
-  const d1 = calcDigit(cpf.slice(0, 9), 10);
-  const d2 = calcDigit(cpf.slice(0, 10), 11);
-  return cpf.endsWith(`${d1}${d2}`);
+  const d1 = calcDigit(document.slice(0, 9), 10);
+  const d2 = calcDigit(document.slice(0, 10), 11);
+  return document.endsWith(`${d1}${d2}`);
 };
 
 const isValidEmailStrict = (value: string): boolean => {
@@ -88,7 +88,7 @@ const isValidEmailStrict = (value: string): boolean => {
 
 const orderSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  surname: z.string().trim().min(2, 'Sobrenome deve ter pelo menos 2 caracteres'),
+  lastname: z.string().trim().min(2, 'Sobrenome deve ter pelo menos 2 caracteres'),
   email: z
     .string()
     .trim()
@@ -97,7 +97,7 @@ const orderSchema = z.object({
   phone: z
     .string()
     .refine((val) => onlyDigits(val).length === 11, 'Telefone inválido'),
-  cpf: z.string().refine((val) => isValidCpf(val), 'CPF inválido'),
+  document: z.string().refine((val) => isValidDocument(val), 'CPF inválido'),
   store: z.string().min(1, 'Selecione uma loja'),
   terms: z.boolean().refine((val) => val === true, 'Aceite os termos'),
 });
@@ -120,10 +120,10 @@ const Order = () => {
   const [entryValue, setEntryValue] = useState<number>(0);
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    surname: '',
+    lastname: '',
     email: '',
     phone: '',
-    cpf: '',
+    document: '',
     store: '',
     terms: false,
   });
@@ -166,7 +166,7 @@ const Order = () => {
     if (paymentMethod === 'financiamento') {
       try {
         const { data, error } = await supabase.functions.invoke('credit-analysis', {
-          body: { cpf: formData.cpf },
+          body: { cpf: formData.document },
         });
 
         if (error || !data || typeof data.score !== 'number') {
@@ -237,10 +237,10 @@ const Order = () => {
       totalPrice: finalPrice,
       customer: {
         name: formData.name,
-        surname: formData.surname,
+        lastname: formData.lastname,
         email: formData.email,
         phone: formData.phone,
-        cpf: formData.cpf,
+        document: formData.document,
         store: formData.store,
       },
       paymentMethod,
@@ -305,18 +305,26 @@ const Order = () => {
                       onChange={(e) => handleChange('name', e.target.value)}
                       className={cn(errors.name && 'border-destructive')}
                     />
-                    {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                    {errors.name && (
+                      <p className="text-sm text-destructive" data-testid="checkout-name-error">
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="surname">Sobrenome</Label>
+                    <Label htmlFor="lastname">Sobrenome</Label>
                     <Input
-                      id="surname"
-                      data-testid="checkout-surname"
-                      value={formData.surname}
-                      onChange={(e) => handleChange('surname', e.target.value)}
-                      className={cn(errors.surname && 'border-destructive')}
+                      id="lastname"
+                      data-testid="checkout-lastname"
+                      value={formData.lastname}
+                      onChange={(e) => handleChange('lastname', e.target.value)}
+                      className={cn(errors.lastname && 'border-destructive')}
                     />
-                    {errors.surname && <p className="text-sm text-destructive">{errors.surname}</p>}
+                    {errors.lastname && (
+                      <p className="text-sm text-destructive" data-testid="checkout-lastname-error">
+                        {errors.lastname}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -328,7 +336,11 @@ const Order = () => {
                       onChange={(e) => handleChange('email', e.target.value)}
                       className={cn(errors.email && 'border-destructive')}
                     />
-                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                    {errors.email && (
+                      <p className="text-sm text-destructive" data-testid="checkout-email-error">
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
@@ -346,25 +358,33 @@ const Order = () => {
                         />
                       )}
                     </InputMask>
-                    {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+                    {errors.phone && (
+                      <p className="text-sm text-destructive" data-testid="checkout-phone-error">
+                        {errors.phone}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
+                    <Label htmlFor="document">CPF</Label>
                     <InputMask
                       mask="999.999.999-99"
-                      value={formData.cpf}
-                      onChange={(e) => handleChange('cpf', e.target.value)}
+                      value={formData.document}
+                      onChange={(e) => handleChange('document', e.target.value)}
                     >
                       {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
                         <Input
                           {...inputProps}
-                          id="cpf"
-                          data-testid="checkout-cpf"
-                          className={cn(errors.cpf && 'border-destructive')}
+                          id="document"
+                          data-testid="checkout-document"
+                          className={cn(errors.document && 'border-destructive')}
                         />
                       )}
                     </InputMask>
-                    {errors.cpf && <p className="text-sm text-destructive">{errors.cpf}</p>}
+                    {errors.document && (
+                      <p className="text-sm text-destructive" data-testid="checkout-document-error">
+                        {errors.document}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="store">Loja para Retirada</Label>
@@ -387,7 +407,11 @@ const Order = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.store && <p className="text-sm text-destructive">{errors.store}</p>}
+                    {errors.store && (
+                      <p className="text-sm text-destructive" data-testid="checkout-store-error">
+                        {errors.store}
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>
@@ -495,7 +519,11 @@ const Order = () => {
                         Política de Privacidade
                       </Link>
                     </Label>
-                    {errors.terms && <p className="text-sm text-destructive mt-1">{errors.terms}</p>}
+                    {errors.terms && (
+                      <p className="text-sm text-destructive mt-1" data-testid="checkout-terms-error">
+                        {errors.terms}
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>
