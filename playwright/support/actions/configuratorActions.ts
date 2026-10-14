@@ -16,7 +16,7 @@ export function createConfiguratorActions(page: Page) {
       await page.getByRole('button', { name }).click()
     },
 
-    async expectPrice(price: string) {
+    async expectPrice(price: string | RegExp) {
       const priceElement = page.getByTestId('total-price')
       await expect(priceElement).toBeVisible()
       await expect(priceElement).toHaveText(price)

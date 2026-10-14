@@ -40,5 +40,19 @@
     },
     "payment": "À Vista",
     "total_price": "40000"
+  },
+  "checkout": {
+    "customer": {
+      "name": "Marina",
+      "lastname": "Almeida",
+      "email": "marina.almeida@email.com",
+      "phone": "(11) 98765-4321",
+      "document": "673.831.818-91",
+      "store": "Velô Paulista - Av. Paulista, 1000",
+      "method": "À Vista"
+    },
+    "total_price": "40000",
+    "color": "Glacier Blue",
+    "wheels": "aero Wheels"
   }
 }

@@ -25,7 +25,7 @@ export function createCheckoutActions(page: Page) {
       ).toBeVisible();
     },
 
-    async expectSummaryTotal(price: string) {
+    async expectSummaryTotal(price: string | RegExp) {
       await expect(page.getByTestId("summary-total-price")).toHaveText(price);
     },
 
@@ -43,7 +43,7 @@ export function createCheckoutActions(page: Page) {
       await page.getByRole("button", { name: method }).click();
     },
 
-    async expectCashPaymentPrice(method: string, price: string) {
+    async expectCashPaymentPrice(method: string, price: string | RegExp) {
       await expect(page.getByRole("button", { name: method })).toContainText(
         price,
       );

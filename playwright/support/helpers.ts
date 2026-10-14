@@ -1,3 +1,13 @@
+export function brlPricePattern(value: string | number): RegExp {
+    const amount = Number(value).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })
+    const escaped = amount.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    return new RegExp(`R\\$\\s*${escaped}`)
+}
+
 export function generateOrderCode() {
     const prefix = 'VLO'
 

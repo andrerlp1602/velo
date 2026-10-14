@@ -1,4 +1,7 @@
 import { test, expect } from "../support/fixtures";
+import { brlPricePattern } from "../support/helpers";
+import { deleteOrdersByEmail } from "../support/database/orderRepository";
+import testData from "../support/fixtures/orders.json" with { type: "json" };
 
 test.describe("Checkout", () => {
   test.describe("Validações de campos obrigatórios", () => {
@@ -133,20 +136,10 @@ test.describe("Checkout", () => {
   });
 
   test("deve aprovar o pedido com pagamento à vista", async ({ app, page }) => {
-    const customer = {
-      name: "Marina",
-      lastname: "Almeida",
-      email: "marina.almeida@email.com",
-      phone: "(11) 98765-4321",
-      document: "673.831.818-91",
-      store: "Velô Paulista - Av. Paulista, 1000",
-      method: "À Vista",
-    };
-    const cashPrice = "R$ 40.000,00";
-    const configuration = {
-      color: "Glacier Blue",
-      wheels: /Aero Wheels/,
-    };
+    const checkout = testData.checkout;
+    const totalPrice = brlPricePattern(checkout.total_price);
+
+    await deleteOrdersByEmail(checkout.customer.email);
 
     // Arrange
     await page.goto("/");
@@ -156,46 +149,56 @@ test.describe("Checkout", () => {
     await page.getByRole("link", { name: "Configure Agora" }).click();
 
     await expect(page).toHaveURL(/\/configure$/);
-    await app.configurator.selectColor(configuration.color);
-    await app.configurator.selectWheels(configuration.wheels);
+    await app.configurator.selectColor(checkout.color);
+    await app.configurator.selectWheels(checkout.wheels);
     await expect(
       page.getByRole("checkbox", { name: /Precision Park/i }),
     ).not.toBeChecked();
     await expect(
       page.getByRole("checkbox", { name: /Flux Capacitor/i }),
     ).not.toBeChecked();
-    await app.configurator.expectPrice(cashPrice);
+    await app.configurator.expectPrice(totalPrice);
     await app.configurator.finishConfigurator();
 
     await app.checkout.expectLoaded();
     await expect(page).toHaveURL(/\/order$/);
-    await app.checkout.expectSummaryTotal(cashPrice);
-    await app.checkout.fillCustomerData(customer);
-    await app.checkout.selectStore(customer.store);
+    await app.checkout.expectSummaryTotal(totalPrice);
+    await app.checkout.fillCustomerData(checkout.customer);
+    await app.checkout.selectStore(checkout.customer.store);
 
     await app.checkout.expectNoFieldErrors();
 
     // Act
-    await app.checkout.selectCashPayment(customer.method);
-    await app.checkout.expectCashPaymentPrice(customer.method, cashPrice);
-    await app.checkout.expectSummaryTotal(cashPrice);
+    await app.checkout.selectCashPayment(checkout.customer.method);
+    await app.checkout.expectCashPaymentPrice(
+      checkout.customer.method,
+      totalPrice,
+    );
+    await app.checkout.expectSummaryTotal(totalPrice);
     await app.checkout.acceptTerms();
-    await Promise.all([app.checkout.expectSubmitting(), app.checkout.submit()]);
+    await Promise.all([
+      app.checkout.expectSubmitting(),
+      app.checkout.submit(),
+    ]);
 
     // Assert
     await expect(page).toHaveURL(/\/success$/);
     await expect(
       page.getByRole("heading", { name: "Pedido Aprovado!" }),
     ).toBeVisible();
-    await expect(page.getByText(/^VLO-[A-Z0-9]{6}$/)).toBeVisible();
+    await expect(page.getByTestId("order-id")).toHaveText(
+      /^VLO-[A-Z0-9]{6}$/,
+    );
     await expect(
-      page.getByText(`${customer.name} ${customer.lastname}`),
+      page.getByText(
+        `${checkout.customer.name} ${checkout.customer.lastname}`,
+      ),
     ).toBeVisible();
-    await expect(page.getByText(customer.email)).toBeVisible();
-    await expect(page.getByText(customer.store)).toBeVisible();
+    await expect(page.getByText(checkout.customer.email)).toBeVisible();
+    await expect(page.getByText(checkout.customer.store)).toBeVisible();
     await expect(
       page.getByText("Glacier Blue • Interior cream • aero wheels"),
     ).toBeVisible();
-    await expect(page.getByText(cashPrice)).toBeVisible();
+    await expect(page.getByText(totalPrice)).toBeVisible();
   });
 });
