@@ -54,5 +54,19 @@
     "total_price": "40000",
     "color": "Glacier Blue",
     "wheels": "aero Wheels"
+  },
+  "credit_approved": {
+    "customer": {
+      "name": "Felipe",
+      "lastname": "Henrique Duarte",
+      "email": "felipe_henrique_duarte@mixfmmanaus.com.br",
+      "phone": "(27) 99172-1022",
+      "document": "219.687.368-32",
+      "store": "Velô Paulista - Av. Paulista, 1000",
+      "method": "Financiamento"
+    },
+    "total_price": "40000",
+    "color": "Glacier Blue",
+    "wheels": "aero Wheels"
   }
 }
