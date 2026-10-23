@@ -135,133 +135,442 @@ test.describe("Checkout", () => {
     });
   });
 
-  test("deve aprovar o pedido com pagamento à vista", async ({ app, page }) => {
-    const checkout = testData.checkout;
-    const totalPrice = brlPricePattern(checkout.total_price);
+  test.describe("Pagamento e Confirmação", () => {
+    test("deve aprovar o pedido com pagamento à vista", async ({
+      app,
+      page,
+    }) => {
+      const checkout = testData.checkout;
+      const totalPrice = brlPricePattern(checkout.total_price);
 
-    await deleteOrdersByEmail(checkout.customer.email);
+      await deleteOrdersByEmail(checkout.customer.email);
 
-    // Arrange
-    await page.goto("/");
-    await expect(
-      page.getByRole("heading", { name: "Velô Sprint", level: 1 }),
-    ).toBeVisible();
-    await page.getByRole("link", { name: "Configure Agora" }).click();
+      // Arrange
+      await page.goto("/");
+      await expect(
+        page.getByRole("heading", { name: "Velô Sprint", level: 1 }),
+      ).toBeVisible();
+      await page.getByRole("link", { name: "Configure Agora" }).click();
 
-    await expect(page).toHaveURL(/\/configure$/);
-    await app.configurator.selectColor(checkout.color);
-    await app.configurator.selectWheels(checkout.wheels);
-    await expect(
-      page.getByRole("checkbox", { name: /Precision Park/i }),
-    ).not.toBeChecked();
-    await expect(
-      page.getByRole("checkbox", { name: /Flux Capacitor/i }),
-    ).not.toBeChecked();
-    await app.configurator.expectPrice(totalPrice);
-    await app.configurator.finishConfigurator();
+      await expect(page).toHaveURL(/\/configure$/);
+      await app.configurator.selectColor(checkout.color);
+      await app.configurator.selectWheels(checkout.wheels);
+      await expect(
+        page.getByRole("checkbox", { name: /Precision Park/i }),
+      ).not.toBeChecked();
+      await expect(
+        page.getByRole("checkbox", { name: /Flux Capacitor/i }),
+      ).not.toBeChecked();
+      await app.configurator.expectPrice(totalPrice);
+      await app.configurator.finishConfigurator();
 
-    await app.checkout.expectLoaded();
-    await expect(page).toHaveURL(/\/order$/);
-    await app.checkout.expectSummaryTotal(totalPrice);
-    await app.checkout.fillCustomerData(checkout.customer);
-    await app.checkout.selectStore(checkout.customer.store);
+      await app.checkout.expectLoaded();
+      await expect(page).toHaveURL(/\/order$/);
+      await app.checkout.expectSummaryTotal(totalPrice);
+      await app.checkout.fillCustomerData(checkout.customer);
+      await app.checkout.selectStore(checkout.customer.store);
 
-    await app.checkout.expectNoFieldErrors();
+      await app.checkout.expectNoFieldErrors();
 
-    // Act
-    await app.checkout.selectCashPayment(checkout.customer.method);
-    await app.checkout.expectCashPaymentPrice(
-      checkout.customer.method,
-      totalPrice,
-    );
-    await app.checkout.expectSummaryTotal(totalPrice);
-    await app.checkout.acceptTerms();
-    await Promise.all([app.checkout.expectSubmitting(), app.checkout.submit()]);
+      // Act
+      await app.checkout.selectCashPayment(checkout.customer.method);
+      await app.checkout.expectCashPaymentPrice(
+        checkout.customer.method,
+        totalPrice,
+      );
+      await app.checkout.expectSummaryTotal(totalPrice);
+      await app.checkout.acceptTerms();
+      await Promise.all([
+        app.checkout.expectSubmitting(),
+        app.checkout.submit(),
+      ]);
 
-    // Assert
-    await expect(page).toHaveURL(/\/success$/);
-    await expect(
-      page.getByRole("heading", { name: "Pedido Aprovado!" }),
-    ).toBeVisible();
-    await expect(page.getByTestId("order-id")).toHaveText(/^VLO-[A-Z0-9]{6}$/);
-    await expect(
-      page.getByText(`${checkout.customer.name} ${checkout.customer.lastname}`),
-    ).toBeVisible();
-    await expect(page.getByText(checkout.customer.email)).toBeVisible();
-    await expect(page.getByText(checkout.customer.store)).toBeVisible();
-    await expect(
-      page.getByText("Glacier Blue • Interior cream • aero wheels"),
-    ).toBeVisible();
-    await expect(page.getByText(totalPrice)).toBeVisible();
-  });
-  test("Deve aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento.", async ({
-    app,
-    page,
-  }) => {
-    const checkout = testData.credit_approved;
-    const totalPrice = brlPricePattern(checkout.total_price);
+      // Assert
+      await expect(page).toHaveURL(/\/success$/);
+      await expect(
+        page.getByRole("heading", { name: "Pedido Aprovado!" }),
+      ).toBeVisible();
+      await expect(page.getByTestId("order-id")).toHaveText(
+        /^VLO-[A-Z0-9]{6}$/,
+      );
+      await expect(
+        page.getByText(
+          `${checkout.customer.name} ${checkout.customer.lastname}`,
+        ),
+      ).toBeVisible();
+      await expect(page.getByText(checkout.customer.email)).toBeVisible();
+      await expect(page.getByText(checkout.customer.store)).toBeVisible();
+      await expect(
+        page.getByText("Glacier Blue • Interior cream • aero wheels"),
+      ).toBeVisible();
+      await expect(page.getByText(totalPrice)).toBeVisible();
+    });
+    test("Deve aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento.", async ({
+      app,
+      page,
+    }) => {
+      const checkout = testData.credit_approved;
+      const totalPrice = brlPricePattern(checkout.total_price);
 
-    await page.route("**/functions/v1/credit-analysis", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ status: "Done", score: 720 }),
+      await page.route("**/functions/v1/credit-analysis", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ status: "Done", score: 720 }),
+        });
       });
+
+      await deleteOrdersByEmail(checkout.customer.email);
+
+      // Arrange
+      await page.goto("/");
+      await expect(
+        page.getByRole("heading", { name: "Velô Sprint", level: 1 }),
+      ).toBeVisible();
+      await page.getByRole("link", { name: "Configure Agora" }).click();
+
+      await expect(page).toHaveURL(/\/configure$/);
+      await app.configurator.selectColor(checkout.color);
+      await app.configurator.selectWheels(checkout.wheels);
+      await expect(
+        page.getByRole("checkbox", { name: /Precision Park/i }),
+      ).not.toBeChecked();
+      await expect(
+        page.getByRole("checkbox", { name: /Flux Capacitor/i }),
+      ).not.toBeChecked();
+      await app.configurator.expectPrice(totalPrice);
+      await app.configurator.finishConfigurator();
+
+      await app.checkout.expectLoaded();
+      await expect(page).toHaveURL(/\/order$/);
+      //await app.checkout.expectSummaryTotal(totalPrice);
+      await app.checkout.fillCustomerData(checkout.customer);
+      await app.checkout.selectStore(checkout.customer.store);
+
+      await app.checkout.expectNoFieldErrors();
+
+      // Act
+      await app.checkout.selectCashPayment(checkout.customer.method);
+      //await app.checkout.expectCashPaymentPrice(
+      //  checkout.customer.method,
+      //  totalPrice,
+      //);
+      //await app.checkout.expectSummaryTotal(totalPrice);
+      await app.checkout.acceptTerms();
+      await Promise.all([
+        app.checkout.expectSubmitting(),
+        app.checkout.submit(),
+      ]);
+
+      // Assert
+      await expect(page).toHaveURL(/\/success$/);
+      await expect(
+        page.getByRole("heading", { name: "Pedido Aprovado!" }),
+      ).toBeVisible();
+      await expect(page.getByTestId("order-id")).toHaveText(
+        /^VLO-[A-Z0-9]{6}$/,
+      );
+      await expect(
+        page.getByText(
+          `${checkout.customer.name} ${checkout.customer.lastname}`,
+        ),
+      ).toBeVisible();
+      await expect(page.getByText(checkout.customer.email)).toBeVisible();
+      await expect(page.getByText(checkout.customer.store)).toBeVisible();
+      await expect(
+        page.getByText("Glacier Blue • Interior cream • aero wheels"),
+      ).toBeVisible();
+      //await expect(page.getByText(totalPrice)).toBeVisible();
     });
 
-    await deleteOrdersByEmail(checkout.customer.email);
+    test("deve deixar o pedido em análise quando o score do financiamento estiver entre 501 e 700", async ({
+      app,
+      page,
+    }) => {
+      const checkout = testData.credit_review;
+      const totalPrice = brlPricePattern(checkout.total_price);
 
-    // Arrange
-    await page.goto("/");
-    await expect(
-      page.getByRole("heading", { name: "Velô Sprint", level: 1 }),
-    ).toBeVisible();
-    await page.getByRole("link", { name: "Configure Agora" }).click();
+      await page.route("**/functions/v1/credit-analysis", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ status: "Done", score: checkout.score }),
+        });
+      });
 
-    await expect(page).toHaveURL(/\/configure$/);
-    await app.configurator.selectColor(checkout.color);
-    await app.configurator.selectWheels(checkout.wheels);
-    await expect(
-      page.getByRole("checkbox", { name: /Precision Park/i }),
-    ).not.toBeChecked();
-    await expect(
-      page.getByRole("checkbox", { name: /Flux Capacitor/i }),
-    ).not.toBeChecked();
-    await app.configurator.expectPrice(totalPrice);
-    await app.configurator.finishConfigurator();
+      await deleteOrdersByEmail(checkout.customer.email);
 
-    await app.checkout.expectLoaded();
-    await expect(page).toHaveURL(/\/order$/);
-    //await app.checkout.expectSummaryTotal(totalPrice);
-    await app.checkout.fillCustomerData(checkout.customer);
-    await app.checkout.selectStore(checkout.customer.store);
+      // Arrange
+      await page.goto("/");
+      await expect(
+        page.getByRole("heading", { name: "Velô Sprint", level: 1 }),
+      ).toBeVisible();
+      await page.getByRole("link", { name: "Configure Agora" }).click();
 
-    await app.checkout.expectNoFieldErrors();
+      await expect(page).toHaveURL(/\/configure$/);
+      await app.configurator.selectColor(checkout.color);
+      await app.configurator.selectWheels(checkout.wheels);
+      await expect(
+        page.getByRole("checkbox", { name: /Precision Park/i }),
+      ).not.toBeChecked();
+      await expect(
+        page.getByRole("checkbox", { name: /Flux Capacitor/i }),
+      ).not.toBeChecked();
+      await app.configurator.expectPrice(totalPrice);
+      await app.configurator.finishConfigurator();
 
-    // Act
-    await app.checkout.selectCashPayment(checkout.customer.method);
-    //await app.checkout.expectCashPaymentPrice(
-    //  checkout.customer.method,
-    //  totalPrice,
-    //);
-    //await app.checkout.expectSummaryTotal(totalPrice);
-    await app.checkout.acceptTerms();
-    await Promise.all([app.checkout.expectSubmitting(), app.checkout.submit()]);
+      await app.checkout.expectLoaded();
+      await expect(page).toHaveURL(/\/order$/);
+      await app.checkout.fillCustomerData(checkout.customer);
+      await app.checkout.selectStore(checkout.customer.store);
+      await app.checkout.expectNoFieldErrors();
 
-    // Assert
-    await expect(page).toHaveURL(/\/success$/);
-    await expect(
-      page.getByRole("heading", { name: "Pedido Aprovado!" }),
-    ).toBeVisible();
-    await expect(page.getByTestId("order-id")).toHaveText(/^VLO-[A-Z0-9]{6}$/);
-    await expect(
-      page.getByText(`${checkout.customer.name} ${checkout.customer.lastname}`),
-    ).toBeVisible();
-    await expect(page.getByText(checkout.customer.email)).toBeVisible();
-    await expect(page.getByText(checkout.customer.store)).toBeVisible();
-    await expect(
-      page.getByText("Glacier Blue • Interior cream • aero wheels"),
-    ).toBeVisible();
-    //await expect(page.getByText(totalPrice)).toBeVisible();
+      // Act
+      await app.checkout.selectCashPayment(checkout.customer.method);
+      await page.getByTestId("input-entry-value").fill("0");
+      await app.checkout.acceptTerms();
+      await Promise.all([
+        app.checkout.expectSubmitting(),
+        app.checkout.submit(),
+      ]);
+
+      // Assert
+      await expect(page).toHaveURL(/\/success$/);
+      await expect(page.getByTestId("success-status")).toHaveText(
+        "Crédito em Análise",
+      );
+    });
+
+    test("deve reprovar o crédito com score menor ou igual a 500 e sem entrada", async ({
+      app,
+      page,
+    }) => {
+      const checkout = testData.credit_rejected_no_entry;
+      const totalPrice = brlPricePattern(checkout.total_price);
+
+      await page.route("**/functions/v1/credit-analysis", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ status: "Done", score: checkout.score }),
+        });
+      });
+
+      await deleteOrdersByEmail(checkout.customer.email);
+
+      // Arrange
+      await page.goto("/");
+      await expect(
+        page.getByRole("heading", { name: "Velô Sprint", level: 1 }),
+      ).toBeVisible();
+      await page.getByRole("link", { name: "Configure Agora" }).click();
+
+      await expect(page).toHaveURL(/\/configure$/);
+      await app.configurator.selectColor(checkout.color);
+      await app.configurator.selectWheels(checkout.wheels);
+      await expect(
+        page.getByRole("checkbox", { name: /Precision Park/i }),
+      ).not.toBeChecked();
+      await expect(
+        page.getByRole("checkbox", { name: /Flux Capacitor/i }),
+      ).not.toBeChecked();
+      await app.configurator.expectPrice(totalPrice);
+      await app.configurator.finishConfigurator();
+
+      await app.checkout.expectLoaded();
+      await expect(page).toHaveURL(/\/order$/);
+      await app.checkout.fillCustomerData(checkout.customer);
+      await app.checkout.selectStore(checkout.customer.store);
+      await app.checkout.expectNoFieldErrors();
+
+      // Act
+      await app.checkout.selectCashPayment(checkout.customer.method);
+      await page.getByTestId("input-entry-value").fill("0");
+      await app.checkout.acceptTerms();
+      await Promise.all([
+        app.checkout.expectSubmitting(),
+        app.checkout.submit(),
+      ]);
+
+      // Assert
+      await expect(page).toHaveURL(/\/success$/);
+      await expect(page.getByTestId("success-status")).toHaveText(
+        "Crédito Reprovado",
+      );
+    });
+
+    test("deve reprovar o crédito com score menor ou igual a 500 e entrada inferior a 50%", async ({
+      app,
+      page,
+    }) => {
+      const checkout = testData.credit_rejected_low_entry;
+      const totalPrice = brlPricePattern(checkout.total_price);
+
+      await page.route("**/functions/v1/credit-analysis", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ status: "Done", score: checkout.score }),
+        });
+      });
+
+      await deleteOrdersByEmail(checkout.customer.email);
+
+      // Arrange
+      await page.goto("/");
+      await expect(
+        page.getByRole("heading", { name: "Velô Sprint", level: 1 }),
+      ).toBeVisible();
+      await page.getByRole("link", { name: "Configure Agora" }).click();
+
+      await expect(page).toHaveURL(/\/configure$/);
+      await app.configurator.selectColor(checkout.color);
+      await app.configurator.selectWheels(checkout.wheels);
+      await expect(
+        page.getByRole("checkbox", { name: /Precision Park/i }),
+      ).not.toBeChecked();
+      await expect(
+        page.getByRole("checkbox", { name: /Flux Capacitor/i }),
+      ).not.toBeChecked();
+      await app.configurator.expectPrice(totalPrice);
+      await app.configurator.finishConfigurator();
+
+      await app.checkout.expectLoaded();
+      await expect(page).toHaveURL(/\/order$/);
+      await app.checkout.fillCustomerData(checkout.customer);
+      await app.checkout.selectStore(checkout.customer.store);
+      await app.checkout.expectNoFieldErrors();
+
+      // Act
+      await app.checkout.selectCashPayment(checkout.customer.method);
+      await page.getByTestId("input-entry-value").fill("19000");
+      await app.checkout.acceptTerms();
+      await Promise.all([
+        app.checkout.expectSubmitting(),
+        app.checkout.submit(),
+      ]);
+
+      // Assert
+      await expect(page).toHaveURL(/\/success$/);
+      await expect(page.getByTestId("success-status")).toHaveText(
+        "Crédito Reprovado",
+      );
+    });
+
+    test("deve aprovar o crédito com score menor ou igual a 500 e entrada igual a 50%", async ({
+      app,
+      page,
+    }) => {
+      const checkout = testData.credit_approved_half_entry;
+      const totalPrice = brlPricePattern(checkout.total_price);
+
+      await page.route("**/functions/v1/credit-analysis", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ status: "Done", score: checkout.score }),
+        });
+      });
+
+      await deleteOrdersByEmail(checkout.customer.email);
+
+      // Arrange
+      await page.goto("/");
+      await expect(
+        page.getByRole("heading", { name: "Velô Sprint", level: 1 }),
+      ).toBeVisible();
+      await page.getByRole("link", { name: "Configure Agora" }).click();
+
+      await expect(page).toHaveURL(/\/configure$/);
+      await app.configurator.selectColor(checkout.color);
+      await app.configurator.selectWheels(checkout.wheels);
+      await expect(
+        page.getByRole("checkbox", { name: /Precision Park/i }),
+      ).not.toBeChecked();
+      await expect(
+        page.getByRole("checkbox", { name: /Flux Capacitor/i }),
+      ).not.toBeChecked();
+      await app.configurator.expectPrice(totalPrice);
+      await app.configurator.finishConfigurator();
+
+      await app.checkout.expectLoaded();
+      await expect(page).toHaveURL(/\/order$/);
+      await app.checkout.fillCustomerData(checkout.customer);
+      await app.checkout.selectStore(checkout.customer.store);
+      await app.checkout.expectNoFieldErrors();
+
+      // Act
+      await app.checkout.selectCashPayment(checkout.customer.method);
+      await page.getByTestId("input-entry-value").fill("21000");
+      await app.checkout.acceptTerms();
+      await Promise.all([
+        app.checkout.expectSubmitting(),
+        app.checkout.submit(),
+      ]);
+
+      // Assert
+      await expect(page).toHaveURL(/\/success$/);
+      await expect(page.getByTestId("success-status")).toHaveText(
+        "Pedido Aprovado!",
+      );
+    });
+
+    test("deve aprovar o crédito com score menor ou igual a 500 e entrada maior que 50%", async ({
+      app,
+      page,
+    }) => {
+      const checkout = testData.credit_approved_high_entry;
+      const totalPrice = brlPricePattern(checkout.total_price);
+
+      await page.route("**/functions/v1/credit-analysis", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ status: "Done", score: checkout.score }),
+        });
+      });
+
+      await deleteOrdersByEmail(checkout.customer.email);
+
+      // Arrange
+      await page.goto("/");
+      await expect(
+        page.getByRole("heading", { name: "Velô Sprint", level: 1 }),
+      ).toBeVisible();
+      await page.getByRole("link", { name: "Configure Agora" }).click();
+
+      await expect(page).toHaveURL(/\/configure$/);
+      await app.configurator.selectColor(checkout.color);
+      await app.configurator.selectWheels(checkout.wheels);
+      await expect(
+        page.getByRole("checkbox", { name: /Precision Park/i }),
+      ).not.toBeChecked();
+      await expect(
+        page.getByRole("checkbox", { name: /Flux Capacitor/i }),
+      ).not.toBeChecked();
+      await app.configurator.expectPrice(totalPrice);
+      await app.configurator.finishConfigurator();
+
+      await app.checkout.expectLoaded();
+      await expect(page).toHaveURL(/\/order$/);
+      await app.checkout.fillCustomerData(checkout.customer);
+      await app.checkout.selectStore(checkout.customer.store);
+      await app.checkout.expectNoFieldErrors();
+
+      // Act
+      await app.checkout.selectCashPayment(checkout.customer.method);
+      await page.getByTestId("input-entry-value").fill("22000");
+      await app.checkout.acceptTerms();
+      await Promise.all([
+        app.checkout.expectSubmitting(),
+        app.checkout.submit(),
+      ]);
+
+      // Assert
+      await expect(page).toHaveURL(/\/success$/);
+      await expect(page.getByTestId("success-status")).toHaveText(
+        "Pedido Aprovado!",
+      );
+    });
   });
 });

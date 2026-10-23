@@ -68,5 +68,81 @@
     "total_price": "40000",
     "color": "Glacier Blue",
     "wheels": "aero Wheels"
+  },
+  "credit_review": {
+    "customer": {
+      "name": "Anderson",
+      "lastname": "Thomas da Costa",
+      "email": "anderson_thomas_dacosta@plastic.com.br",
+      "phone": "(91) 99216-6672",
+      "document": "152.606.263-11",
+      "store": "Velô Paulista - Av. Paulista, 1000",
+      "method": "Financiamento"
+    },
+    "total_price": "40000",
+    "color": "Glacier Blue",
+    "wheels": "aero Wheels",
+    "score": 600
+  },
+
+  "credit_rejected_no_entry": {
+    "customer": {
+      "name": "Carlos",
+      "lastname": "Eduardo Santos",
+      "email": "carlos.eduardo.santos@velo.dev",
+      "phone": "(11) 98888-7777",
+      "document": "111.444.777-35",
+      "store": "Velô Paulista - Av. Paulista, 1000",
+      "method": "Financiamento"
+    },
+    "total_price": "42000",
+    "color": "Midnight Black",
+    "wheels": "sport Wheels",
+    "score": 500
+  },
+  "credit_rejected_low_entry": {
+    "customer": {
+      "name": "Marcos",
+      "lastname": "Oliveira Santos",
+      "email": "marcos.oliveira.santos@velo.dev",
+      "phone": "(11) 97777-6666",
+      "document": "529.982.247-25",
+      "store": "Velô Paulista - Av. Paulista, 1000",
+      "method": "Financiamento"
+    },
+    "total_price": "42000",
+    "color": "Midnight Black",
+    "wheels": "sport Wheels",
+    "score": 500
+  },
+  "credit_approved_high_entry": {
+    "customer": {
+      "name": "Renata",
+      "lastname": "Beatriz Nogueira",
+      "email": "renata.nogueira@velo.dev",
+      "phone": "(21) 99654-3210",
+      "document": "390.533.447-05",
+      "store": "Velô Faria Lima - Av. Faria Lima, 2500",
+      "method": "Financiamento"
+    },
+    "total_price": "40000",
+    "color": "Lunar White",
+    "wheels": "aero Wheels",
+    "score": 500
+  },
+  "credit_approved_half_entry": {
+    "customer": {
+      "name": "Marilyn",
+      "lastname": "Manson",
+      "email": "marilyn.manson@velo.dev",
+      "phone": "(21) 99654-6666",
+      "document": "390.533.447-05",
+      "store": "Velô Faria Lima - Av. Faria Lima, 2500",
+      "method": "Financiamento"
+    },
+    "total_price": "40000",
+    "color": "Lunar White",
+    "wheels": "aero Wheels",
+    "score": 500
   }
 }
