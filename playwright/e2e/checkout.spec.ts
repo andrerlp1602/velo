@@ -1,6 +1,66 @@
+import type { Page } from '@playwright/test'
+
 import { test, expect } from '../support/fixtures'
 
 import { deleteOrderByEmail } from '../support/database/orderRepository'
+
+type CheckoutCustomer = {
+  name: string
+  lastname: string
+  email: string
+  phone: string
+  document: string
+  store: string
+  totalPrice: string
+}
+
+type CheckoutApp = {
+  configurator: {
+    expectPrice: (price: string) => Promise<void>
+    finishConfigurator: () => Promise<void>
+  }
+  checkout: {
+    expectLoaded: () => Promise<void>
+    fillCustomerlData: (data: {
+      name: string
+      lastname: string
+      email: string
+      phone: string
+      document: string
+    }) => Promise<void>
+    selectStore: (store: string) => Promise<void>
+  }
+}
+
+async function mockCreditScore(page: Page, score: number) {
+  await page.route('**/functions/v1/credit-analysis', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'Done',
+        score,
+      }),
+    })
+  })
+}
+
+async function arrangeCheckout(page: Page, app: CheckoutApp, customer: CheckoutCustomer) {
+  await page.goto('/')
+  await page.getByRole('link', { name: /Configure Agora/i }).click()
+
+  await app.configurator.expectPrice(customer.totalPrice)
+  await app.configurator.finishConfigurator()
+  await app.checkout.expectLoaded()
+
+  await app.checkout.fillCustomerlData(customer)
+  await app.checkout.selectStore(customer.store)
+}
+
+async function expectSuccessHeading(page: Page, name: string | RegExp) {
+  await expect(page).toHaveURL(/\/success/)
+  await expect(page.getByRole('heading', { name })).toBeVisible()
+}
 
 test.describe('Checkout', () => {
 
@@ -140,15 +200,7 @@ test.describe('Checkout', () => {
       await deleteOrderByEmail(customer.email)
 
       // Arrange
-      await page.goto('/')
-      await page.getByRole('link', { name: /Configure Agora/i }).click()
-
-      await app.configurator.expectPrice(customer.totalPrice)
-      await app.configurator.finishConfigurator()
-      await app.checkout.expectLoaded()
-
-      await app.checkout.fillCustomerlData(customer)
-      await app.checkout.selectStore(customer.store)
+      await arrangeCheckout(page, app, customer)
 
       // Act
       await app.checkout.selectPaymentMethod(customer.paymentMethod)
@@ -157,8 +209,7 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(page).toHaveURL(/\/success/)
-      await expect(page.getByRole('heading', { name: 'Pedido Aprovado!' })).toBeVisible()
+      await expectSuccessHeading(page, 'Pedido Aprovado!')
     })
 
     test('deve aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento', async ({ page, app }) => {
@@ -176,27 +227,10 @@ test.describe('Checkout', () => {
 
       await deleteOrderByEmail(customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 710,
-          }),
-        })
-      })
+      await mockCreditScore(page, 710)
 
       // Arrange
-      await page.goto('/')
-      await page.getByRole('link', { name: /Configure Agora/i }).click()
-
-      await app.configurator.expectPrice(customer.totalPrice)
-      await app.configurator.finishConfigurator()
-      await app.checkout.expectLoaded()
-
-      await app.checkout.fillCustomerlData(customer)
-      await app.checkout.selectStore(customer.store)
+      await arrangeCheckout(page, app, customer)
 
       // Act
       await app.checkout.selectPaymentMethod(customer.paymentMethod)
@@ -205,8 +239,7 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(page).toHaveURL(/\/success/)
-      await expect(page.getByRole('heading', { name: 'Pedido Aprovado!' })).toBeVisible()
+      await expectSuccessHeading(page, 'Pedido Aprovado!')
     })
 
     test('deve encaminhar para análise de crédito quando o score do CPF for entre 501 e 700 no financiamento', async ({ page, app }) => {
@@ -224,27 +257,10 @@ test.describe('Checkout', () => {
 
       await deleteOrderByEmail(customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 600,
-          }),
-        })
-      })
+      await mockCreditScore(page, 600)
 
       // Arrange
-      await page.goto('/')
-      await page.getByRole('link', { name: /Configure Agora/i }).click()
-
-      await app.configurator.expectPrice(customer.totalPrice)
-      await app.configurator.finishConfigurator()
-      await app.checkout.expectLoaded()
-
-      await app.checkout.fillCustomerlData(customer)
-      await app.checkout.selectStore(customer.store)
+      await arrangeCheckout(page, app, customer)
 
       // Act
       await app.checkout.selectPaymentMethod(customer.paymentMethod)
@@ -252,8 +268,7 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(page).toHaveURL(/\/success/)
-      await expect(page.getByRole('heading', { name: 'Pedido em Análise!' })).toBeVisible()
+      await expectSuccessHeading(page, 'Pedido em Análise!')
     })
 
     test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento sem entrada', async ({ page, app }) => {
@@ -271,27 +286,10 @@ test.describe('Checkout', () => {
 
       await deleteOrderByEmail(customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 500,
-          }),
-        })
-      })
+      await mockCreditScore(page, 500)
 
       // Arrange
-      await page.goto('/')
-      await page.getByRole('link', { name: /Configure Agora/i }).click()
-
-      await app.configurator.expectPrice(customer.totalPrice)
-      await app.configurator.finishConfigurator()
-      await app.checkout.expectLoaded()
-
-      await app.checkout.fillCustomerlData(customer)
-      await app.checkout.selectStore(customer.store)
+      await arrangeCheckout(page, app, customer)
 
       // Act
       await app.checkout.selectPaymentMethod(customer.paymentMethod)
@@ -299,8 +297,7 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(page).toHaveURL(/\/success/)
-      await expect(page.getByRole('heading', { name: /Crédito Reprovado/i })).toBeVisible()
+      await expectSuccessHeading(page, /Crédito Reprovado/i)
     })
 
     test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada menor que 50%', async ({ page, app }) => {
@@ -319,27 +316,10 @@ test.describe('Checkout', () => {
 
       await deleteOrderByEmail(customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 500,
-          }),
-        })
-      })
+      await mockCreditScore(page, 500)
 
       // Arrange
-      await page.goto('/')
-      await page.getByRole('link', { name: /Configure Agora/i }).click()
-
-      await app.configurator.expectPrice(customer.totalPrice)
-      await app.configurator.finishConfigurator()
-      await app.checkout.expectLoaded()
-
-      await app.checkout.fillCustomerlData(customer)
-      await app.checkout.selectStore(customer.store)
+      await arrangeCheckout(page, app, customer)
 
       // Act
       await app.checkout.selectPaymentMethod(customer.paymentMethod)
@@ -348,8 +328,7 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(page).toHaveURL(/\/success/)
-      await expect(page.getByRole('heading', { name: /Crédito Reprovado/i })).toBeVisible()
+      await expectSuccessHeading(page, /Crédito Reprovado/i)
     })
 
     test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada igual a 50%', async ({ page, app }) => {
@@ -368,27 +347,10 @@ test.describe('Checkout', () => {
 
       await deleteOrderByEmail(customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 450,
-          }),
-        })
-      })
+      await mockCreditScore(page, 450)
 
       // Arrange
-      await page.goto('/')
-      await page.getByRole('link', { name: /Configure Agora/i }).click()
-
-      await app.configurator.expectPrice(customer.totalPrice)
-      await app.configurator.finishConfigurator()
-      await app.checkout.expectLoaded()
-
-      await app.checkout.fillCustomerlData(customer)
-      await app.checkout.selectStore(customer.store)
+      await arrangeCheckout(page, app, customer)
 
       // Act
       await app.checkout.selectPaymentMethod(customer.paymentMethod)
@@ -397,8 +359,7 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(page).toHaveURL(/\/success/)
-      await expect(page.getByRole('heading', { name: /Pedido Aprovado/i })).toBeVisible()
+      await expectSuccessHeading(page, /Pedido Aprovado/i)
     })
 
     test('deve reprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada mair que 50%', async ({ page, app }) => {
@@ -417,27 +378,10 @@ test.describe('Checkout', () => {
 
       await deleteOrderByEmail(customer.email)
 
-      await page.route('**/functions/v1/credit-analysis', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'Done',
-            score: 300,
-          }),
-        })
-      })
+      await mockCreditScore(page, 300)
 
       // Arrange
-      await page.goto('/')
-      await page.getByRole('link', { name: /Configure Agora/i }).click()
-
-      await app.configurator.expectPrice(customer.totalPrice)
-      await app.configurator.finishConfigurator()
-      await app.checkout.expectLoaded()
-
-      await app.checkout.fillCustomerlData(customer)
-      await app.checkout.selectStore(customer.store)
+      await arrangeCheckout(page, app, customer)
 
       // Act
       await app.checkout.selectPaymentMethod(customer.paymentMethod)
@@ -446,8 +390,7 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(page).toHaveURL(/\/success/)
-      await expect(page.getByRole('heading', { name: /Pedido Aprovado/i })).toBeVisible()
+      await expectSuccessHeading(page, /Pedido Aprovado/i)
     })
 
   })
